@@ -6,34 +6,42 @@ import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBr
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
-@Configuration
-@EnableWebSocketMessageBroker
+/**
+ * Configuration class for WebSockets using STOMP.
+ * Architecture: Implements the Publisher/Subscriber (Observer) Design Pattern.
+ */
+@Configuration // IoC: Tells Spring to manage the lifecycle of this configuration bean.
+@EnableWebSocketMessageBroker // Bootstraps the message broker infrastructure.
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+    /**
+     * Configures the message broker routing.
+     * SOLID: Open/Closed Principle - overriding default behavior to inject our
+     * specific routing rules.
+     */
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        // 1. Enable a simple memory-based message broker.
-        // The server will broadcast messages to all clients subscribed to topics
-        // prefixed with "/topic".
-        // Example: /topic/board/123
+
+        // Sets up an in-memory broker (backed by Concurrent collections)
+        // to broadcast messages to clients subscribed to topics prefixed with "/topic".
         config.enableSimpleBroker("/topic");
 
-        // 2. Designate the prefix for messages sent FROM the client TO the server.
-        // When a client sends a message to "/app/shape.move", it routes to a
-        // @MessageMapping("shape.move") controller.
+        // Routes incoming messages from clients prefixed with "/app"
+        // to our custom @MessageMapping controllers.
         config.setApplicationDestinationPrefixes("/app");
     }
 
+    /**
+     * Registers the initial HTTP endpoint for the WebSocket handshake.
+     */
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // 3. Register the STOMP endpoint that the frontend will use to establish the
-        // initial connection.
+
         registry.addEndpoint("/ws")
-                // Allow Vite's default dev server port. In production, this would be restricted
-                // to your frontend domain.
+                // Security: Explicitly allow CORS from our local React dev server.
                 .setAllowedOriginPatterns("http://localhost:5173")
-                // SockJS provides fallback options (like long-polling) if raw WebSockets are
-                // blocked by proxies or firewalls.
+                // Network Resilience: Provides fallback options (like long-polling)
+                // if strict WebSockets are blocked by proxies or firewalls.
                 .withSockJS();
     }
 }
