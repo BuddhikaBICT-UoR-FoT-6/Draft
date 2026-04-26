@@ -12,24 +12,28 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        // 1. Enable a simple in-memory message broker to send messages back to the
-        // client.
-        // Clients will subscribe to destinations prefixed with "/topic" (e.g.,
-        // /topic/board/1)
+        // 1. Enable a simple memory-based message broker.
+        // The server will broadcast messages to all clients subscribed to topics
+        // prefixed with "/topic".
+        // Example: /topic/board/123
         config.enableSimpleBroker("/topic");
 
         // 2. Designate the prefix for messages sent FROM the client TO the server.
-        // These will be routed to your @MessageMapping controllers.
+        // When a client sends a message to "/app/shape.move", it routes to a
+        // @MessageMapping("shape.move") controller.
         config.setApplicationDestinationPrefixes("/app");
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // 3. Register the endpoint that clients will use to connect to the WebSocket
-        // server.
+        // 3. Register the STOMP endpoint that the frontend will use to establish the
+        // initial connection.
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*") // Crucial for local dev: allows the React frontend (port 5173) to
-                                               // connect to Spring Boot (port 8080)
-                .withSockJS(); // Fallback mechanism for browsers that don't support raw WebSockets
+                // Allow Vite's default dev server port. In production, this would be restricted
+                // to your frontend domain.
+                .setAllowedOriginPatterns("http://localhost:5173")
+                // SockJS provides fallback options (like long-polling) if raw WebSockets are
+                // blocked by proxies or firewalls.
+                .withSockJS();
     }
 }
